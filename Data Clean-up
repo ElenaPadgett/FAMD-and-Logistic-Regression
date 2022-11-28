@@ -1,20 +1,16 @@
+# Title:    Data Clean up // FAMD and Logistic Regression Analysis
+# File:     Customer Churn
+# Project:  Data Mining Using R
+
 # INSTALL AND LOAD PACKAGES ################################
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
   dplyr,
-  # plyr,
-  magrittr,  #Pipes
-  FactoMineR, #FAMD Analysis
-  factoextra, #Visualizing FAMD results
-  corrplot,
+  plyr,
   ggplot2,
-  gridExtra,
-  vcd,
   psych,
-  caret,    #to partition the data for log regression
-  ROCR,
   openxlsx
 )
 
