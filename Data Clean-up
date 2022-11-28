@@ -1,0 +1,87 @@
+# INSTALL AND LOAD PACKAGES ################################
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse,
+  dplyr,
+  # plyr,
+  magrittr,  #Pipes
+  FactoMineR, #FAMD Analysis
+  factoextra, #Visualizing FAMD results
+  corrplot,
+  ggplot2,
+  gridExtra,
+  vcd,
+  psych,
+  caret,    #to partition the data for log regression
+  ROCR,
+  openxlsx
+)
+
+# LOAD DATA ####################################
+mydata <- read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv")
+summary(mydata)
+
+# CLEAN UP DATA ####################################
+
+## Find and replace missing values
+map(mydata, ~sum(is.na(.x)))
+mydata$TotalCharges <- ifelse(is.na(mydata$TotalCharges), 0, mydata$TotalCharges)
+which(is.na(mydata$TotalCharges))
+
+## Rename and drop columns
+mydata <- rename(mydata, 
+                 c(gender="Gender", tenure="Tenure"))
+names(mydata)
+
+mydata$customerID <- NULL
+
+## Transform variables
+
+# Transform SeniorCitizen into char type
+mydata$SeniorCitizen <- as.factor(mapvalues
+       (mydata$SeniorCitizen,from=c("0","1"),to=c("No", "Yes")))
+       
+ # Change "No internet service" to "No"
+c1 <- c("No internet service")
+c2 <- c("No phone service")
+c3 <- c("No")
+
+mydata$MultipleLines %>%
+  mapvalues(c2,c3) %>%
+  as.factor()
+
+mydata$OnlineSecurity %>%
+  mapvalues(c1, c3) %>% 
+  as.factor()
+  
+mydata$OnlineBackup %>%
+  mapvalues(c1, c3) %>%
+  as.factor()
+
+mydata$DeviceProtection %>%
+  mapvalues(c1, c3) %>%
+  as.factor()
+
+mydata$TechSupport %>%
+  mapvalues(c1, c3) %>%
+  as.factor()
+
+mydata$StreamingTV %>%
+  mapvalues(c1, c3) %>%
+  as.factor()
+
+mydata$StreamingMovies %>%
+  mapvalues(c1, c3) %>%
+  as.factor()
+  
+## Check for outliers
+boxplot(mydata$MonthlyCharges, col = "slategray3", whisklty = 1, 
+        main = "Monthly Charges")
+boxplot(mydata$TotalCharges, col = "slategray3", whisklty = 1, 
+        main = "Total Charges")
+boxplot.stats(mydata$MonthlyCharges)
+boxplot.stats(mydata$TotalCharges)
+
+## Save clean data into Excel
+write.xlsx(mydata, 'Customer_Churn_Cleaned.xlsx')
