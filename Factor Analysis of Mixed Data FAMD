@@ -1,1 +1,123 @@
+# Title:    Factor Analysis of Mixed Data // FAMD and Logistic Regression Analysis
+# File:     Customer Churn
+# Project:  Data Mining Using R
+
+# INSTALL AND LOAD PACKAGES ################################
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse,
+  dplyr,
+  plyr,
+  ggplot2,
+  psych,
+  readxl,
+  magrittr,
+  corrplot,
+  FactoMineR, #FAMD Analysis
+  factoextra, #Visualizing FAMD results
+  gridExtra
+  #vcd,
+  #caret,    #to partition the data for log regression
+  #ROCR
+)
+
+# LOAD DATA ####################################
+mydata <- read_xlsx('Customer_Churn_Cleaned.xlsx')
+summary(mydata)
+
+# Visualize the type of contract vs. the churn rate
+b1 <- ggplot(mydata, aes(Contract, fill=Churn)) + 
+  geom_bar(colour="black") + scale_fill_brewer()
+b1
+
+# Visualize monthly charges, total charges, and tenure
+h1<-ggplot(mydata, aes(MonthlyCharges))+ ggtitle("Monthly Charges")+ 
+  xlab("Dollars")+ geom_histogram(binwidth=10, color="black", fill="steelblue")+ 
+  theme_bw()
+h2<-ggplot(mydata, aes(x=TotalCharges)) + ggtitle("Total Charges") + 
+  xlab("Dollars")+ geom_histogram(binwidth=500, color="black", fill="steelblue") + 
+  theme_bw()
+h3 <- ggplot(mydata,aes(x=Tenure)) + ggtitle("Tenure") +
+  xlab("Months")+ geom_histogram(binwidth=10, color="black", fill="steelblue")+ 
+  theme_bw()
+grid.arrange(h1, h2, h3, ncol=2)
+
+# EXPLORE THE DATA DISTRIBUTION ####################################
+
+# Obtain descriptive statistics for numerical variables
+numvars <- c("Tenure", "MonthlyCharges", "TotalCharges")
+summary(mydata[numvars])
+
+# Obtain mean stats by group (Contract type)
+aggregate(mydata[numvars], 
+          by=list(Contract=mydata$Contract), mean)
+          
+# Create frequency tables of categorical variables
+table(mydata$Churn)
+table(mydata$Gender)
+table(mydata$Contract)
+
+# Turn frequency counts into proportions
+mydata$Churn %>%
+  table() %>%
+  sort(decreasing = TRUE) %>%
+  prop.table() * 100 
+
+mydata$Gender %>%
+  table() %>%
+  sort(decreasing = TRUE) %>%
+  prop.table() * 100 
+
+mydata$Contract %>%
+  table() %>%
+  sort(decreasing = TRUE) %>%
+  prop.table() * 100
+
+# Create cross tabulation tables (two-way tables)
+ttab1 <- table(mydata$Contract, mydata$Churn)
+ttab2 <- table(mydata$Gender, mydata$Churn)
+
+# Chi-square tests of independence
+# There appears to be a relationship between Contract and Churn variables (p<0.05)
+tchi <- chisq.test(ttab1)
+tchi
+
+# There doesn't appear to be a relationship between Gender and Churn variables (p>0.05)
+tchi <- chisq.test(ttab2)
+tchi
+
+# FACTOR ANALYSIS OF MIXED DATA #############################################
+
+#Set the target variable "Churn" as a supplementary variable
+# and compute Factor Analysis of Mixed Data
+res.famd<- FAMD(mydata, sup.var = 20, graph=FALSE)
+
+#Extract the eigenvalues/variances retained by each dimension (axis)
+eig.val <- get_eigenvalue(res.famd)
+print(eig.val)
+
+#Visualize the % of explained variance (Scree plot)
+a <- fviz_eig(res.famd)
+b <- fviz_eig(res.famd, choice='eigenvalue', geom='line')
+grid.arrange(a, b, ncol=2)
+
+#Contributions to the dimensions
+var<- get_famd_var(res.famd)
+round(var$contrib, 6)
+
+#Contributions of cont and cat variables (without Churn)
+p <- fviz_famd_var(res.famd, 'var', axes = c(1, 2), 
+                   col.var = 'cos2', repel = TRUE)
+p
+fviz_add(p, res.famd$var$coord.sup, col.var = 'cos2')
+
+#Visualize the contribution of variables to the principal dimensions
+fviz_contrib(res.famd, "var", axes = 1)
+fviz_contrib(res.famd, "var", axes = 2)
+
+#Visualize the quantitative variables with correlation circle:
+fviz_famd_var(res.famd, "quanti.var", 
+              repel = TRUE, col.var = "black")
+
 
