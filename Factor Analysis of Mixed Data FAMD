@@ -17,9 +17,6 @@ pacman::p_load(
   FactoMineR, #FAMD Analysis
   factoextra, #Visualizing FAMD results
   gridExtra
-  #vcd,
-  #caret,    #to partition the data for log regression
-  #ROCR
 )
 
 # LOAD DATA ####################################
