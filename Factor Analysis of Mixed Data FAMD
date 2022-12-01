@@ -100,22 +100,19 @@ a <- fviz_eig(res.famd)
 b <- fviz_eig(res.famd, choice='eigenvalue', geom='line')
 grid.arrange(a, b, ncol=2)
 
-#Contributions to the dimensions
+#Contributions to the principal dimensions
 var<- get_famd_var(res.famd)
 round(var$contrib, 6)
 
-#Contributions of continuous and categorical variables (without Churn)
+#Visualize the contribution of variables to the principal dimensions
+fviz_contrib(res.famd, "var", axes = 1)
+fviz_contrib(res.famd, "var", axes = 2)
+
+# Squared Loading Plot (Contributions of continuous and categorical variables)
 p <- fviz_famd_var(res.famd, 'var', axes = c(1, 2), 
                    col.var = 'cos2', repel = TRUE)
 p
 fviz_add(p, res.famd$var$coord.sup, col.var = 'cos2')
 
-#Contribution of variables to the principal dimensions
-fviz_contrib(res.famd, "var", axes = 1)
-fviz_contrib(res.famd, "var", axes = 2)
-
-#Visualize the quantitative variables with correlation circle:
-fviz_famd_var(res.famd, "quanti.var", 
-              repel = TRUE, col.var = "black")
 
 
