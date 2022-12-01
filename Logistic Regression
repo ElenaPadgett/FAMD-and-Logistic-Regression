@@ -1,0 +1,70 @@
+# Title:    Logistic Regression // FAMD and Logistic Regression Analysis
+# File:     Customer Churn
+# Project:  Data Mining Using R
+
+# INSTALL AND LOAD PACKAGES ################################
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse,
+  dplyr,
+  plyr,
+  ggplot2,
+  psych,
+  readxl,
+  magrittr,
+  vcd,
+  caret,    #to partition the data for log regression
+  ROCR
+)
+
+# LOAD DATA ####################################
+mydata <- read_xlsx('Customer_Churn_Cleaned.xlsx')
+summary(mydata)
+
+#Split data into training and testing sets
+intrain<- createDataPartition(mydata$Churn,
+                              p=0.7,list=FALSE)
+set.seed(2027)
+training<- mydata[intrain,]
+testing<- mydata[-intrain,]
+
+#Logistic regression on training data
+model <- glm(Churn ~ .,family=binomial(link="logit"),
+             data=training)
+summary(model)
+
+#Choose a model by AIC in stepwise algorithm
+select_model = step(glm(Churn ~.,data = training, 
+                        family=binomial(link='logit')), 
+                    direction="both")
+model_2 <- glm(Churn ~ SeniorCitizen + Tenure + PhoneService + MultipleLines + 
+                 InternetService + OnlineBackup + DeviceProtection + StreamingTV + 
+                 StreamingMovies + Contract + PaperlessBilling + PaymentMethod + 
+                 MonthlyCharges + TotalCharges,
+               family=binomial(link="logit"),
+               data=training)
+summary(model_2)
+
+# Assess the accuracy of the model with the error rate
+testing$Churn <- as.character(testing$Churn)
+testing$Churn[testing$Churn=="No"] <- "0"
+testing$Churn[testing$Churn=="Yes"] <- "1"
+result <- predict(model_2, newdata=testing, type='response')
+result <- ifelse(result > 0.5,1,0)
+error_rate <- mean(result != testing$Churn)
+print(error_rate)
+
+# Assess the accuracy of the model with the ROC curve
+P <- predict(model_2,newdata=testing,type='response')
+Pr <- prediction(P,testing$Churn)
+Prf <- performance(Pr, measure='tpr', x.measure='fpr')
+plot(Prf)
+
+# Calculate the area under the curve
+Auc <- performance(Pr, measure = 'auc')
+Auc <- Auc@y.values[[1]]
+Auc
+
+# Print a confusion matrix to show a cross-tabulation of actual and predicted values
+table(testing$Churn, result > 0.5)
