@@ -14,7 +14,7 @@ pacman::p_load(
   readxl,
   magrittr,
   vcd,
-  caret,    #to partition the data for log regression
+  caret,
   ROCR
 )
 
@@ -22,49 +22,60 @@ pacman::p_load(
 mydata <- read_xlsx('Customer_Churn_Cleaned.xlsx')
 summary(mydata)
 
+mydata$Churn[mydata$Churn=="No"] <- "0"
+mydata$Churn[mydata$Churn=="Yes"] <- "1"
+mydata$Churn <- as.factor(mydata$Churn)
+
 #Split data into training and testing sets
-intrain<- createDataPartition(mydata$Churn,
-                              p=0.7,list=FALSE)
+intrain<- createDataPartition(mydata$Churn, p=0.7,list=FALSE)
 set.seed(2027)
 training<- mydata[intrain,]
 testing<- mydata[-intrain,]
 
 #Logistic regression on training data
-model <- glm(Churn ~ .,family=binomial(link="logit"),
-             data=training)
+model <- glm(Churn ~ .,family=binomial(link="logit"), data=training)
 summary(model)
 
 #Choose a model by AIC in stepwise algorithm
 select_model = step(glm(Churn ~.,data = training, 
-                        family=binomial(link='logit')), 
-                    direction="both")
+                        family=binomial(link='logit')), direction="both")
+                        
 model_2 <- glm(Churn ~ SeniorCitizen + Tenure + PhoneService + MultipleLines + 
                  InternetService + OnlineBackup + DeviceProtection + StreamingTV + 
                  StreamingMovies + Contract + PaperlessBilling + PaymentMethod + 
-                 MonthlyCharges + TotalCharges,
-               family=binomial(link="logit"),
-               data=training)
+                 MonthlyCharges + TotalCharges,family=binomial(link="logit"),data=training)
 summary(model_2)
 
-# Assess the accuracy of the model with the error rate
+# Assess the accuracy of the models with the error rate
 testing$Churn <- as.character(testing$Churn)
 testing$Churn[testing$Churn=="No"] <- "0"
 testing$Churn[testing$Churn=="Yes"] <- "1"
+
+result <- predict(model, newdata=testing, type='response')
+result <- ifelse(result > 0.5,1,0)
+error_rate <- mean(result != testing$Churn)
+error_rate
+
 result <- predict(model_2, newdata=testing, type='response')
 result <- ifelse(result > 0.5,1,0)
 error_rate <- mean(result != testing$Churn)
-print(error_rate)
+error_rate
 
-# Assess the accuracy of the model with the ROC curve
-P <- predict(model_2,newdata=testing,type='response')
+# Assess the accuracy of the models with the ROC curve
+P <- predict(model,newdata=testing,type='response')
 Pr <- prediction(P,testing$Churn)
 Prf <- performance(Pr, measure='tpr', x.measure='fpr')
 plot(Prf)
 
-# Calculate the area under the curve
 Auc <- performance(Pr, measure = 'auc')
 Auc <- Auc@y.values[[1]]
 Auc
 
-# Print a confusion matrix to show a cross-tabulation of actual and predicted values
-table(testing$Churn, result > 0.5)
+P <- predict(model_2,newdata=testing,type='response')
+Pr <- prediction(P,testing$Churn)
+Prf <- performance(Pr, measure='tpr', x.measure='fpr')
+plot(Prf)
+Auc <- performance(Pr, measure = 'auc')
+Auc <- Auc@y.values[[1]]
+Auc
+
