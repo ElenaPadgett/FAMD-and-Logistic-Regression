@@ -14,8 +14,8 @@ pacman::p_load(
   readxl,
   magrittr,
   corrplot,
-  FactoMineR, #FAMD Analysis
-  factoextra, #Visualizing FAMD results
+  FactoMineR, 
+  factoextra, 
   gridExtra
 )
 
@@ -73,7 +73,9 @@ mydata$Contract %>%
 
 # Create cross tabulation tables (two-way tables)
 ttab1 <- table(mydata$Contract, mydata$Churn)
+ttab1
 ttab2 <- table(mydata$Gender, mydata$Churn)
+ttab2
 
 # Chi-square tests of independence
 # There appears to be a relationship between Contract and Churn variables (p<0.05)
@@ -86,15 +88,14 @@ tchi
 
 # FACTOR ANALYSIS OF MIXED DATA #############################################
 
-#Set the target variable "Churn" as a supplementary variable
-# and compute Factor Analysis of Mixed Data
+#Set the target variable "Churn" as a supplementary variable and compute Factor Analysis of Mixed Data
 res.famd<- FAMD(mydata, sup.var = 20, graph=FALSE)
 
 #Extract the eigenvalues/variances retained by each dimension (axis)
 eig.val <- get_eigenvalue(res.famd)
 print(eig.val)
 
-#Visualize the % of explained variance (Scree plot)
+#Visualize the percentage of explained variance (Scree plot)
 a <- fviz_eig(res.famd)
 b <- fviz_eig(res.famd, choice='eigenvalue', geom='line')
 grid.arrange(a, b, ncol=2)
@@ -103,13 +104,13 @@ grid.arrange(a, b, ncol=2)
 var<- get_famd_var(res.famd)
 round(var$contrib, 6)
 
-#Contributions of cont and cat variables (without Churn)
+#Contributions of continuous and categorical variables (without Churn)
 p <- fviz_famd_var(res.famd, 'var', axes = c(1, 2), 
                    col.var = 'cos2', repel = TRUE)
 p
 fviz_add(p, res.famd$var$coord.sup, col.var = 'cos2')
 
-#Visualize the contribution of variables to the principal dimensions
+#Contribution of variables to the principal dimensions
 fviz_contrib(res.famd, "var", axes = 1)
 fviz_contrib(res.famd, "var", axes = 2)
 
